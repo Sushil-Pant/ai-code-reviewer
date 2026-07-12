@@ -1,7 +1,4 @@
-"""
-Gemini AI Service - Core AI Integration
-Handles all interactions with Google Gemini API
-"""
+"""Gemini service integration."""
 
 import google.generativeai as genai
 import json
@@ -13,11 +10,11 @@ from utils.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini
+# Configure Gemini client.
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
-# ─── Prompt Templates ─────────────────────────────────────────────────────────
+# Prompt templates defined.
 
 SYSTEM_CONTEXT = """You are an expert Senior Software Engineer and Code Security Analyst with 15+ years of experience. 
 You specialize in code review, security auditing, performance optimization, and software architecture.
@@ -25,10 +22,7 @@ You must always respond with valid JSON only — no markdown, no explanation out
 
 
 def build_review_prompt(code: str, language: str) -> str:
-    """
-    Advanced prompt engineering template for code analysis.
-    Instructs Gemini to return structured JSON with all required fields.
-    """
+    """Build review prompt."""
     language_guidelines = {
         "python": "PEP 8 style guide, type hints, proper exception handling, virtual environments",
         "java": "Java naming conventions, SOLID principles, proper null handling, exception hierarchy",
@@ -101,14 +95,14 @@ IMPORTANT RULES:
     return prompt
 
 
-# ─── Gemini Service Class ─────────────────────────────────────────────────────
+# Gemini service class.
 
 class GeminiService:
     def __init__(self):
         self.model = genai.GenerativeModel(
             model_name=settings.GEMINI_MODEL,
             generation_config={
-                "temperature": 0.3,        # Lower = more consistent/deterministic
+                "temperature": 0.3,        # Model temperature setting.
                 "top_p": 0.8,
                 "top_k": 40,
                 "max_output_tokens": 8192,
@@ -122,13 +116,13 @@ class GeminiService:
         )
 
     def _clean_json_response(self, text: str) -> str:
-        """Extract clean JSON from Gemini response"""
-        # Remove markdown code blocks if present
+        """Clean JSON response."""
+        # Remove markdown wrappers.
         text = re.sub(r'```json\s*', '', text)
         text = re.sub(r'```\s*', '', text)
         text = text.strip()
 
-        # Find JSON object boundaries
+        # Find JSON boundaries.
         start = text.find('{')
         end = text.rfind('}')
         if start != -1 and end != -1:
@@ -137,27 +131,27 @@ class GeminiService:
         return text
 
     def _parse_response(self, raw_text: str) -> dict:
-        """Parse and validate Gemini JSON response"""
+        """Parse JSON response."""
         cleaned = self._clean_json_response(raw_text)
 
         try:
             data = json.loads(cleaned)
         except json.JSONDecodeError as e:
             logger.error(f"JSON parse error: {e}\nRaw: {cleaned[:500]}")
-            # Return fallback structure
+            # Return fallback structure.
             data = self._fallback_response()
 
-        # Validate and clamp scores
+        # Validate score values.
         for score_key in ["overall_score", "security_score", "performance_score", "maintainability_score"]:
             if score_key not in data:
                 data[score_key] = 50
             data[score_key] = max(0, min(100, int(data.get(score_key, 50))))
 
-        # Ensure issues list exists
+        # Ensure issues list.
         if "issues" not in data or not isinstance(data["issues"], list):
             data["issues"] = []
 
-        # Validate each issue
+        # Validate issues data.
         valid_severities = {"High", "Medium", "Low"}
         valid_categories = {"Security", "Performance", "Bug", "Code Smell", "Maintainability", "Coding Standards"}
 
@@ -185,7 +179,7 @@ class GeminiService:
         return data
 
     def _fallback_response(self) -> dict:
-        """Fallback when Gemini fails to return valid JSON"""
+        """Get fallback response."""
         return {
             "overall_score": 50,
             "security_score": 50,
@@ -205,15 +199,13 @@ class GeminiService:
         }
 
     async def analyze_code(self, code: str, language: str) -> dict:
-        """
-        Main method: Send code to Gemini and return structured analysis
-        """
+        """Analyze submitted code."""
         logger.info(f"Analyzing {language} code ({len(code)} chars)")
 
         prompt = build_review_prompt(code, language)
 
         try:
-            # Add system context as part of the prompt
+            # Append system context.
             full_prompt = f"{SYSTEM_CONTEXT}\n\n{prompt}"
 
             response = self.model.generate_content(full_prompt)
@@ -231,5 +223,5 @@ class GeminiService:
             raise ValueError(f"AI analysis failed: {str(e)}")
 
 
-# Singleton instance
+# Service singleton instance.
 gemini_service = GeminiService()

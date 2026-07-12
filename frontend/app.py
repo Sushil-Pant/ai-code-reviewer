@@ -1,7 +1,4 @@
-"""
-AI Code Reviewer - Streamlit Frontend
-Complete multi-page application
-"""
+"""Streamlit UI frontend."""
 
 import streamlit as st
 import requests
@@ -13,7 +10,7 @@ import pandas as pd
 
 import os
 
-# Check environment variable first, then st.secrets, fallback to localhost
+# Initialize backend URL.
 API_BASE = os.getenv("API_BASE_URL")
 if not API_BASE:
     try:
@@ -29,7 +26,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ─── Custom CSS ────────────────────────────────────────────────────────────────
+# Load custom CSS.
 
 def load_css():
     st.markdown("""
@@ -288,10 +285,10 @@ def load_css():
     """, unsafe_allow_html=True)
 
 
-# ─── API Helpers ───────────────────────────────────────────────────────────────
+# API helper functions.
 
 def api_call(method: str, endpoint: str, data: dict = None, token: str = None) -> tuple:
-    """Make API calls and return (data, error)"""
+    """Perform API call."""
     url = f"{API_BASE}{endpoint}"
     headers = {"Content-Type": "application/json"}
     if token:
@@ -321,7 +318,7 @@ def api_call(method: str, endpoint: str, data: dict = None, token: str = None) -
         return None, str(e)
 
 
-# ─── Score Helpers ─────────────────────────────────────────────────────────────
+# Score helper functions.
 
 def score_class(score: float) -> str:
     if score >= 85: return "score-excellent"
@@ -375,7 +372,7 @@ def render_gauge_chart(score: float, title: str):
     return fig
 
 
-# ─── Session State ──────────────────────────────────────────────────────────────
+# Manage session state.
 
 def init_session():
     defaults = {
@@ -391,7 +388,7 @@ def init_session():
             st.session_state[k] = v
 
 
-# ─── Auth Pages ───────────────────────────────────────────────────────────────
+# Render authentication pages.
 
 def page_login():
     import os
@@ -407,11 +404,11 @@ def page_login():
         except Exception:
             pass
             
-    # Fallback logo if file read fails
+    # Read fallback logo.
     if not logo_svg:
         logo_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="60" height="60"><rect width="128" height="128" rx="20" fill="#10b981"/></svg>"""
 
-    # Read preview mockup image in base64
+    # Read mockup image.
     img_base64 = ""
     img_path = r"c:\AI_Code_Reviewer\frontend\assets\ide_preview.png"
     if os.path.exists(img_path):
@@ -421,11 +418,11 @@ def page_login():
         except Exception:
             pass
 
-    # Track auth mode in session state
+    # Track auth mode.
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "login"
 
-    # Define CSS styles for the cover page
+    # Define cover CSS.
     login_css = """
     <style>
     /* ── Hide default Streamlit navigation, footer, header ── */
@@ -665,7 +662,7 @@ def page_login():
     st.markdown('<div class="top-accent-bar"></div>', unsafe_allow_html=True)
     st.markdown('<div class="right-accent-bar"></div>', unsafe_allow_html=True)
 
-    # Render Centered Header with logo cluster
+    # Render centered header.
     st.markdown(f"""
     <div class="logo-cluster-container">
         <div class="logo-bubble bubble-1">&#123;&#125;</div>
@@ -679,17 +676,17 @@ def page_login():
     <h2 class="landing-subtitle">The Intelligence behind your Codebase</h2>
     """, unsafe_allow_html=True)
 
-    # Two Column Layout
+    # Setup two columns.
     col_left, col_right = st.columns([1, 1.25], gap="large")
 
     with col_left:
         if st.session_state.auth_mode == "login":
-            # Pill Demo Button
+            # Render signup link.
             if st.button("Not a user? Sign up for a demo →", key="btn_demo"):
                 st.session_state.auth_mode = "signup"
                 st.rerun()
 
-            # Form fields
+            # Setup form fields.
             st.markdown('<span class="login-field-label">ENTER WORK EMAIL (for analysis dashboard)</span>', unsafe_allow_html=True)
             email = st.text_input("", placeholder="me@example.com", key="login_email_input")
             
@@ -710,12 +707,12 @@ def page_login():
                     st.warning("Please enter your email.")
                     
         else:
-            # Pill Login Button
+            # Render login link.
             if st.button("Already a user? Log into account →", key="btn_demo"):
                 st.session_state.auth_mode = "login"
                 st.rerun()
 
-            # Form fields
+            # Setup form fields.
             st.markdown('<span class="login-field-label">ENTER WORK EMAIL (for analysis dashboard)</span>', unsafe_allow_html=True)
             email = st.text_input("", placeholder="me@example.com", key="signup_email_input")
             
@@ -752,11 +749,11 @@ def page_login():
                 else:
                     st.error(f"❌ {provider} Sign-in failed: {err}")
 
-        # Social Google button
+        # Google login button.
         if st.button("Sign in with Google", key="btn_google", type="primary"):
             handle_social_login("Google", "google_user@example.com")
 
-        # Insights list
+        # Render insights list.
         st.markdown("""
         <div class="insights-container">
             <h3 class="insights-title">AI-Powered Insights</h3>
@@ -781,7 +778,7 @@ def page_login():
 
 
 
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
+# Render sidebar UI.
 
 def render_sidebar():
     with st.sidebar:
@@ -824,7 +821,7 @@ def render_sidebar():
 
 
 
-# ─── Page: Code Review ────────────────────────────────────────────────────────
+# Render review page.
 
 def page_review():
     st.markdown("""
@@ -898,7 +895,7 @@ def page_review():
             </div>
             """, unsafe_allow_html=True)
 
-    # ── Results ──
+    # Render review results.
     result = st.session_state.get("review_result")
     if result:
         render_review_results(result)
@@ -908,14 +905,14 @@ def render_review_results(result: dict):
     st.markdown("---")
     st.markdown('<div class="section-header">Review Results</div>', unsafe_allow_html=True)
 
-    # Score cards
+    # Render score cards.
     c1, c2, c3, c4 = st.columns(4)
     with c1: render_score_card("Overall Score", result["overall_score"], "")
     with c2: render_score_card("Security", result["security_score"], "")
     with c3: render_score_card("Performance", result["performance_score"], "")
     with c4: render_score_card("Maintainability", result["maintainability_score"], "")
 
-    # Gauge charts
+    # Render score gauges.
     st.markdown("#### Score Breakdown")
     g1, g2, g3, g4 = st.columns(4)
     with g1: st.plotly_chart(render_gauge_chart(result["overall_score"], "Overall"), use_container_width=True)
@@ -923,7 +920,7 @@ def render_review_results(result: dict):
     with g3: st.plotly_chart(render_gauge_chart(result["performance_score"], "Performance"), use_container_width=True)
     with g4: st.plotly_chart(render_gauge_chart(result["maintainability_score"], "Maintainability"), use_container_width=True)
 
-    # Issue summary
+    # Render issue summary.
     st.markdown("#### Issue Summary")
     i1, i2, i3, i4 = st.columns(4)
     with i1:
@@ -951,7 +948,7 @@ def render_review_results(result: dict):
             <div class="metric-label">Low Severity</div>
         </div>""", unsafe_allow_html=True)
 
-    # Issues List + Improved Code
+    # Render issue list.
     tab1, tab2, tab3 = st.tabs(["Detected Issues", "Improved Code", "Raw JSON"])
 
     with tab1:
@@ -959,7 +956,7 @@ def render_review_results(result: dict):
         if not issues:
             st.success("No issues detected! Great code!")
         else:
-            # Filter controls
+            # Setup filter controls.
             fc1, fc2 = st.columns(2)
             with fc1:
                 sev_filter = st.multiselect("Filter by Severity", ["High", "Medium", "Low"],
@@ -1023,7 +1020,7 @@ def render_review_results(result: dict):
         })
 
 
-# ─── Page: Dashboard ──────────────────────────────────────────────────────────
+# Render dashboard page.
 
 def page_dashboard():
     st.markdown('<div class="hero-banner"><div class="hero-title">Dashboard</div></div>', unsafe_allow_html=True)
@@ -1041,7 +1038,7 @@ def page_dashboard():
             st.rerun()
         return
 
-    # ── Top Stats ──
+    # Render top stats.
     c1, c2, c3, c4 = st.columns(4)
     metrics = [
         (c1, "Total Reviews", data["total_reviews"], "", "#58a6ff"),
@@ -1059,7 +1056,7 @@ def page_dashboard():
 
     st.markdown("---")
 
-    # ── Score Breakdown Chart ──
+    # Render score charts.
     col_a, col_b = st.columns(2)
 
     with col_a:
@@ -1119,7 +1116,7 @@ def page_dashboard():
         else:
             st.info("No language data available yet.")
 
-    # ── Recent Reviews Table ──
+    # Render recent reviews.
     st.markdown("#### Recent Reviews")
     recent = data.get("recent_reviews", [])
     if recent:
@@ -1140,12 +1137,12 @@ def page_dashboard():
         st.info("No recent reviews.")
 
 
-# ─── Page: History ────────────────────────────────────────────────────────────
+# Render history page.
 
 def page_history():
     st.markdown('<div class="hero-banner"><div class="hero-title">Review History</div></div>', unsafe_allow_html=True)
 
-    # Filter
+    # Filter review history.
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         lang_filter = st.selectbox("Filter Language", ["All", "python", "javascript", "java", "cpp", "c"])
@@ -1194,7 +1191,7 @@ def page_history():
                 if st.button("View Full", key=f"view_{rev['id']}"):
                     st.session_state[f"show_review_{rev['id']}"] = True
 
-            # Show full review details
+            # Show review details.
             if st.session_state.get(f"show_review_{rev['id']}"):
                 detail, err2 = api_call("GET", f"/review/{rev['id']}", token=st.session_state.token)
                 if detail:
@@ -1210,7 +1207,7 @@ def page_history():
 
 
 
-# ─── Main App ─────────────────────────────────────────────────────────────────
+# Main application entry.
 
 def main():
     init_session()

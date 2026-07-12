@@ -1,7 +1,4 @@
-"""
-AI Code Reviewer - FastAPI Backend
-Main application entry point
-"""
+"""FastAPI backend entry."""
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +10,7 @@ from routers import review, auth, dashboard
 from database.db import init_db
 from utils.config import settings
 
-# Configure logging
+# Setup application logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -29,7 +26,7 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Register API routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(review.router, prefix="/api/review", tags=["Code Review"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
@@ -46,7 +43,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"]
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup"""
+    """Initialize database connection"""
     logger.info("Starting AI Code Reviewer API...")
     init_db()
     logger.info("Database initialized successfully")

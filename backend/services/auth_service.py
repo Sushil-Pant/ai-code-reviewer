@@ -1,6 +1,4 @@
-"""
-Authentication Service - JWT + Password Hashing
-"""
+"""Authentication service helpers."""
 
 from datetime import datetime, timedelta
 from typing import Optional
@@ -14,7 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Password hashing
+# Hash password methods.
 
 def hash_password(password: str) -> str:
     password_bytes = password.encode('utf-8')

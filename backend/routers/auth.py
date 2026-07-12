@@ -1,6 +1,4 @@
-"""
-Authentication Router - Register, Login, Profile
-"""
+"""User authentication router."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,16 +16,16 @@ router = APIRouter()
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user account"""
+    """Register new user."""
 
-    # Check username availability
+    # Check username availability.
     if get_user_by_username(db, user_data.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already taken"
         )
 
-    # Check email availability
+    # Check email availability.
     if get_user_by_email(db, user_data.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,7 +44,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    """Login and receive JWT token"""
+    """Login user account."""
 
     user = authenticate_user(db, credentials.username, credentials.password)
     if not user:
@@ -67,13 +65,13 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
-    """Get current user profile"""
+    """Get user profile."""
     return UserResponse.from_orm(current_user)
 
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):
-    """Logout (client-side token invalidation)"""
+    """Logout user account."""
     return {"message": "Logged out successfully"}
 
 
@@ -86,7 +84,7 @@ class PasswordlessLoginRequest(BaseModel):
 
 @router.post("/login-passwordless", response_model=Token)
 async def login_passwordless(credentials: PasswordlessLoginRequest, db: Session = Depends(get_db)):
-    """Login passwordlessly using email"""
+    """Passwordless email login."""
     user = get_user_by_email(db, credentials.email)
     if not user:
         raise HTTPException(
@@ -103,7 +101,7 @@ async def login_passwordless(credentials: PasswordlessLoginRequest, db: Session 
 
 @router.post("/register-passwordless", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def register_passwordless(credentials: PasswordlessLoginRequest, db: Session = Depends(get_db)):
-    """Register passwordlessly using email"""
+    """Register passwordlessly email."""
     email = credentials.email
     if get_user_by_email(db, email):
         raise HTTPException(
@@ -111,13 +109,13 @@ async def register_passwordless(credentials: PasswordlessLoginRequest, db: Sessi
             detail="Email already registered"
         )
     
-    # Generate username from email prefix
+    # Generate fallback username.
     base_username = email.split("@")[0]
     username = "".join(c for c in base_username if c.isalnum() or c == "_")
     if len(username) < 3:
         username = username + "123"
         
-    # Ensure uniqueness
+    # Ensure username uniqueness.
     temp_username = username
     counter = 1
     while get_user_by_username(db, temp_username):
@@ -125,7 +123,7 @@ async def register_passwordless(credentials: PasswordlessLoginRequest, db: Sessi
         counter += 1
     username = temp_username
     
-    # Create the user with a fallback password hash
+    # Create new user.
     from services.auth_service import hash_password
     hashed_fallback = hash_password("passwordless_default_key_123!")
     user = User(

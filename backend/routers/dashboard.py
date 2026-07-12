@@ -1,6 +1,4 @@
-"""
-Dashboard Router - Analytics and Statistics
-"""
+"""Dashboard analytics router."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -16,6 +14,6 @@ async def get_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get dashboard statistics for the current user"""
+    """Get dashboard statistics."""
     stats = get_dashboard_stats(db, current_user.id)
     return stats

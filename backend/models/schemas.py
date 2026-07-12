@@ -1,6 +1,4 @@
-"""
-Pydantic schemas for request/response validation
-"""
+"""Data validation schemas."""
 
 from pydantic import BaseModel, EmailStr, validator
 from typing import List, Optional
@@ -8,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 
 
-# ─── Enums ────────────────────────────────────────────────────────────────────
+# Define custom enums.
 
 class ProgrammingLanguage(str, Enum):
     PYTHON = "python"
@@ -33,7 +31,7 @@ class IssueCategory(str, Enum):
     CODING_STANDARDS = "Coding Standards"
 
 
-# ─── Auth Schemas ─────────────────────────────────────────────────────────────
+# Define authentication schemas.
 
 class UserCreate(BaseModel):
     username: str
@@ -79,7 +77,7 @@ class Token(BaseModel):
     user: UserResponse
 
 
-# ─── Review Schemas ───────────────────────────────────────────────────────────
+# Define review schemas.
 
 class CodeReviewRequest(BaseModel):
     code: str
@@ -136,7 +134,7 @@ class ReviewListItem(BaseModel):
         from_attributes = True
 
 
-# ─── Dashboard Schemas ────────────────────────────────────────────────────────
+# Define dashboard schemas.
 
 class DashboardStats(BaseModel):
     total_reviews: int
@@ -150,7 +148,7 @@ class DashboardStats(BaseModel):
     recent_reviews: List[ReviewListItem]
 
 
-# ─── Gemini Response Schema ───────────────────────────────────────────────────
+# Define gemini schemas.
 
 class GeminiIssue(BaseModel):
     severity: str

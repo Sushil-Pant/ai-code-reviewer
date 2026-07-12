@@ -1,7 +1,4 @@
-"""
-Database configuration and initialization
-SQLite with SQLAlchemy ORM
-"""
+"""Database configuration setup."""
 
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 from utils.config import settings
 
-# Create engine (only use check_same_thread for SQLite)
+# Setup database engine.
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False
@@ -23,7 +20,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# ─── Database Models ──────────────────────────────────────────────────────────
+# Database table models.
 
 class User(Base):
     __tablename__ = "users"
@@ -48,19 +45,19 @@ class CodeReview(Base):
     original_code = Column(Text, nullable=False)
     improved_code = Column(Text, nullable=True)
 
-    # Scores
+    # Model review scores.
     overall_score = Column(Float, default=0.0)
     security_score = Column(Float, default=0.0)
     performance_score = Column(Float, default=0.0)
     maintainability_score = Column(Float, default=0.0)
 
-    # Metadata
+    # Model review metadata.
     total_issues = Column(Integer, default=0)
     high_severity_count = Column(Integer, default=0)
     medium_severity_count = Column(Integer, default=0)
     low_severity_count = Column(Integer, default=0)
 
-    # Raw JSON response
+    # Model raw response.
     raw_response = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -74,8 +71,8 @@ class ReviewIssue(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     review_id = Column(Integer, ForeignKey("code_reviews.id"), nullable=False)
-    severity = Column(String(20), nullable=False)   # High, Medium, Low
-    category = Column(String(50), nullable=False)   # Security, Performance, etc.
+    severity = Column(String(20), nullable=False)   # Issue severity levels.
+    category = Column(String(50), nullable=False)   # Issue category tags.
     description = Column(Text, nullable=False)
     fix = Column(Text, nullable=True)
     line_number = Column(Integer, nullable=True)
@@ -83,7 +80,7 @@ class ReviewIssue(Base):
     review = relationship("CodeReview", back_populates="issues")
 
 
-# ─── Database Helpers ─────────────────────────────────────────────────────────
+# Database utility helpers.
 
 def init_db():
     """Create all tables"""
@@ -91,7 +88,7 @@ def init_db():
 
 
 def get_db():
-    """Dependency for getting DB session"""
+    """Yield database session"""
     db = SessionLocal()
     try:
         yield db

@@ -1,6 +1,4 @@
-"""
-Review Service - Business logic for code review operations
-"""
+"""Code review service."""
 
 import json
 import logging
@@ -18,25 +16,19 @@ async def perform_code_review(
     user: User,
     request: CodeReviewRequest
 ) -> CodeReview:
-    """
-    Core workflow:
-    1. Send code to Gemini
-    2. Parse response
-    3. Store in database
-    4. Return review object
-    """
+    """Perform code review."""
     logger.info(f"Starting review for user {user.id}, language: {request.language}")
 
-    # Step 1: AI Analysis
+    # Run AI analysis.
     analysis = await gemini_service.analyze_code(request.code, request.language.value)
 
-    # Step 2: Count severity levels
+    # Count severity levels.
     issues = analysis.get("issues", [])
     high_count = sum(1 for i in issues if i.get("severity") == "High")
     medium_count = sum(1 for i in issues if i.get("severity") == "Medium")
     low_count = sum(1 for i in issues if i.get("severity") == "Low")
 
-    # Step 3: Create review record
+    # Create review record.
     review = CodeReview(
         user_id=user.id,
         language=request.language.value,
@@ -53,9 +45,9 @@ async def perform_code_review(
         raw_response=json.dumps(analysis)
     )
     db.add(review)
-    db.flush()  # Get ID without committing
+    db.flush()  # Flush database changes.
 
-    # Step 4: Store individual issues
+    # Save review issues.
     for issue_data in issues:
         issue = ReviewIssue(
             review_id=review.id,
@@ -75,7 +67,7 @@ async def perform_code_review(
 
 
 def get_review_by_id(db: Session, review_id: int, user_id: int) -> Optional[CodeReview]:
-    """Get a specific review belonging to a user"""
+    """Get user review."""
     return db.query(CodeReview).filter(
         CodeReview.id == review_id,
         CodeReview.user_id == user_id
@@ -89,7 +81,7 @@ def get_user_reviews(
     limit: int = 20,
     language: Optional[str] = None
 ) -> List[CodeReview]:
-    """Get paginated list of reviews for a user"""
+    """Get user reviews."""
     query = db.query(CodeReview).filter(CodeReview.user_id == user_id)
 
     if language:
@@ -99,7 +91,7 @@ def get_user_reviews(
 
 
 def delete_review(db: Session, review_id: int, user_id: int) -> bool:
-    """Delete a review (user ownership check)"""
+    """Delete user review."""
     review = get_review_by_id(db, review_id, user_id)
     if not review:
         return False
@@ -109,7 +101,7 @@ def delete_review(db: Session, review_id: int, user_id: int) -> bool:
 
 
 def get_dashboard_stats(db: Session, user_id: int) -> dict:
-    """Aggregate statistics for the dashboard"""
+    """Get dashboard statistics."""
     from sqlalchemy import func
 
     reviews = db.query(CodeReview).filter(CodeReview.user_id == user_id)
@@ -128,7 +120,7 @@ def get_dashboard_stats(db: Session, user_id: int) -> dict:
             "recent_reviews": []
         }
 
-    # Aggregates
+    # Calculate aggregate statistics.
     agg = db.query(
         func.avg(CodeReview.overall_score).label("avg_overall"),
         func.avg(CodeReview.security_score).label("avg_security"),
@@ -138,7 +130,7 @@ def get_dashboard_stats(db: Session, user_id: int) -> dict:
         func.sum(CodeReview.high_severity_count).label("total_high"),
     ).filter(CodeReview.user_id == user_id).first()
 
-    # Language breakdown
+    # Group by language.
     lang_rows = db.query(
         CodeReview.language,
         func.count(CodeReview.id).label("cnt")
@@ -146,7 +138,7 @@ def get_dashboard_stats(db: Session, user_id: int) -> dict:
 
     languages_used = {row.language: row.cnt for row in lang_rows}
 
-    # Recent reviews
+    # Fetch recent reviews.
     recent = reviews.order_by(CodeReview.created_at.desc()).limit(10).all()
     recent_data = [
         {

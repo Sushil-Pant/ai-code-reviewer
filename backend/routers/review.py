@@ -1,6 +1,4 @@
-"""
-Review Router - Code Review Endpoints
-"""
+"""Code review router."""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
@@ -24,14 +22,11 @@ async def analyze_code(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Main endpoint: Submit code for AI review.
-    Returns comprehensive analysis with scores, issues, and improved code.
-    """
+    """Submit AI review."""
     try:
         review = await perform_code_review(db, current_user, request)
 
-        # Build response
+        # Build API response.
         issues_data = [
             {
                 "id": issue.id,
@@ -82,7 +77,7 @@ async def get_review_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get paginated review history for the current user"""
+    """Get review history."""
     reviews = get_user_reviews(db, current_user.id, skip, limit, language)
 
     return {
@@ -114,7 +109,7 @@ async def get_review(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific review by ID"""
+    """Get review details."""
     review = get_review_by_id(db, review_id, current_user.id)
     if not review:
         raise HTTPException(
@@ -158,7 +153,7 @@ async def delete_review_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a review"""
+    """Delete code review."""
     success = delete_review(db, review_id, current_user.id)
     if not success:
         raise HTTPException(
